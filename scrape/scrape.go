@@ -24,6 +24,7 @@ import (
 	"math"
 	"net/http"
 	"reflect"
+	"strings"
 	"sync"
 	"time"
 	"unsafe"
@@ -689,16 +690,38 @@ var userAgentHeader = fmt.Sprintf("Prometheus/%s", version.Version)
 
 func (s *targetScraper) scrape(ctx context.Context, w io.Writer) (string, error) {
 	if s.req == nil {
-		req, err := http.NewRequest("GET", s.URL().String(), nil)
-		if err != nil {
-			return "", err
-		}
-		req.Header.Add("Accept", acceptHeader)
-		req.Header.Add("Accept-Encoding", "gzip")
-		req.Header.Set("User-Agent", userAgentHeader)
-		req.Header.Set("X-Prometheus-Scrape-Timeout-Seconds", fmt.Sprintf("%f", s.timeout.Seconds()))
+		segments := strings.Split(s.URL().String(), "?")
 
-		s.req = req
+		if len(segments) > 1 {
+			req, err := http.NewRequest("GET", segments[0], nil)
+			if err != nil {
+				return "", err
+			}
+			headers := strings.Split(segments[1], "=")
+			if len(headers) > 1 {
+				req.Header.Add(headers[0], headers[1])
+			}
+			req.Header.Add("Accept", acceptHeader)
+			req.Header.Add("Accept-Encoding", "gzip")
+			req.Header.Set("User-Agent", userAgentHeader)
+			req.Header.Set("X-Prometheus-Scrape-Timeout-Seconds", fmt.Sprintf("%f", s.timeout.Seconds()))
+
+			s.req = req
+
+		} else {
+			//original code
+			req, err := http.NewRequest("GET", s.URL().String(), nil)
+			if err != nil {
+				return "", err
+			}
+			req.Header.Add("Accept", acceptHeader)
+			req.Header.Add("Accept-Encoding", "gzip")
+			req.Header.Set("User-Agent", userAgentHeader)
+			req.Header.Set("X-Prometheus-Scrape-Timeout-Seconds", fmt.Sprintf("%f", s.timeout.Seconds()))
+
+			s.req = req
+		}
+
 	}
 
 	resp, err := s.client.Do(s.req.WithContext(ctx))

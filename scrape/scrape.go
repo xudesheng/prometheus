@@ -690,7 +690,7 @@ var userAgentHeader = fmt.Sprintf("Prometheus/%s", version.Version)
 
 func (s *targetScraper) scrape(ctx context.Context, w io.Writer) (string, error) {
 	if s.req == nil {
-		segments := strings.Split(s.URL().String(), "?")
+		segments := strings.Split(s.URL().String(), "%3F")
 
 		if len(segments) > 1 {
 			req, err := http.NewRequest("GET", segments[0], nil)

@@ -692,36 +692,26 @@ func (s *targetScraper) scrape(ctx context.Context, w io.Writer) (string, error)
 	if s.req == nil {
 		segments := strings.Split(s.URL().String(), "%3F")
 
+		//origin code
+		//req, err := http.NewRequest("GET", s.URL().String(), nil)
+		req, err := http.NewRequest("GET", segments[0], nil)
+		if err != nil {
+			return "", err
+		}
+		//add additional header
 		if len(segments) > 1 {
-			req, err := http.NewRequest("GET", segments[0], nil)
-			if err != nil {
-				return "", err
-			}
 			headers := strings.Split(segments[1], "=")
 			if len(headers) > 1 {
 				req.Header.Add(headers[0], headers[1])
 			}
-			req.Header.Add("Accept", acceptHeader)
-			req.Header.Add("Accept-Encoding", "gzip")
-			req.Header.Set("User-Agent", userAgentHeader)
-			req.Header.Set("X-Prometheus-Scrape-Timeout-Seconds", fmt.Sprintf("%f", s.timeout.Seconds()))
-
-			s.req = req
-
-		} else {
-			//original code
-			req, err := http.NewRequest("GET", s.URL().String(), nil)
-			if err != nil {
-				return "", err
-			}
-			req.Header.Add("Accept", acceptHeader)
-			req.Header.Add("Accept-Encoding", "gzip")
-			req.Header.Set("User-Agent", userAgentHeader)
-			req.Header.Set("X-Prometheus-Scrape-Timeout-Seconds", fmt.Sprintf("%f", s.timeout.Seconds()))
-
-			s.req = req
 		}
+		//origin code
+		req.Header.Add("Accept", acceptHeader)
+		req.Header.Add("Accept-Encoding", "gzip")
+		req.Header.Set("User-Agent", userAgentHeader)
+		req.Header.Set("X-Prometheus-Scrape-Timeout-Seconds", fmt.Sprintf("%f", s.timeout.Seconds()))
 
+		s.req = req
 	}
 
 	resp, err := s.client.Do(s.req.WithContext(ctx))
